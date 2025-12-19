@@ -1,6 +1,14 @@
 var validator = require('validator');
 const UserCollection = require("../../models/user")
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+async function creatToken(id) {
+    return  await jwt.sign({
+    _id : id
+},process.env.JWT_SECRET, {expiresIn : "1h"})
+}
+
+
 async function SignUp(req, res) {
     const { email, password } = req.body
     
@@ -27,9 +35,13 @@ async function SignUp(req, res) {
             email,
             password : hashedPassword
         })
-        
+        const token = await creatToken(newUser._id)
         await newUser.save()
-         return res.status(200).json({ data: newUser})
+        return res.status(200).json({
+            data: {
+                newUser,
+                accessToken : token
+         },})
     } catch (err) {
         console.log(err)
  return res.status(500).json({ message: "Internal server error"})
@@ -65,9 +77,13 @@ async function SignIn(req, res) {
                 return res.status(400).json({ message: "Incorrect Password"})
  }
         
-       
+            const token = await creatToken(user._id)
     
-         return res.status(200).json({ data: user})
+        return res.status(200).json({
+            data: {
+                user,
+                accessToken : token
+         }})
     } catch (err) {
         console.log(err)
  return res.status(500).json({ message: "Internal server error"})
